@@ -123,14 +123,13 @@ class OfflineModel:
             if m["role"] == "tool" or (m.get("content") or "").startswith("Evidence JSON:\n")
         ]
         query = question
-        # An explicit subject wins over a pronoun elsewhere in the same question.
-        # This is a small demo heuristic; the OpenAI provider rewrites using the LLM.
-        explicit_subject = re.search(r"\bproject\s+\w+", question, re.I) or re.search(
-            r"\b[A-Z][\w-]+\b", " ".join(question.split()[1:])
-        )
+        # The demo recognizes Project <name> or a leading <topic>: as topic cues.
+        # Capitalization alone (e.g. Q4 or Monday) does not identify a subject.
+        # The OpenAI provider resolves natural-language context using the LLM.
+        explicit_topic = re.search(r"\bproject\s+\w+|^\s*[\w-]+\s*:", question, re.I)
         if (
             re.search(r"\b(it|its|they|their|that)\b", question, re.I)
-            and not explicit_subject
+            and not explicit_topic
             and len(questions) > 1
         ):
             query = questions[-2] + " " + question
