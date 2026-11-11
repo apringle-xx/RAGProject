@@ -17,6 +17,7 @@ from tempfile import TemporaryDirectory
 from dotenv import load_dotenv
 
 from rag.agent import NaiveRAG, RetrievalAgent
+from rag.grounding import is_abstention
 from rag.providers import OfflineEmbeddings, OfflineModel, OpenAIEmbeddings, OpenAIModel
 from rag.service import Library
 from rag.store import VectorStore
@@ -31,9 +32,7 @@ def normalized(text: str) -> str:
 
 def score(answer: Answer, case: dict, known_chunks: set[str]) -> dict:
     text = normalized(answer.text)
-    abstained = bool(
-        re.search(r"don t know|do not know|not (?:provided|available|found)|no .*information", text)
-    )
+    abstained = is_abstention(answer.text)
     if case.get("abstain"):
         correct = abstained and not answer.citations
     else:
