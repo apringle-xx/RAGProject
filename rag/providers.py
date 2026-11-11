@@ -9,6 +9,7 @@ from typing import Protocol
 import numpy as np
 from openai import OpenAI
 
+from rag.grounding import is_conversation
 from rag.types import ToolCall, Turn
 
 SEARCH_TOOL = {
@@ -114,7 +115,7 @@ class OfflineModel:
         ]
         questions = [messages[i]["content"] for i in question_positions]
         question = questions[-1]
-        if question.strip().lower().strip("!.") in {"hello", "hi", "hey", "thanks", "thank you"}:
+        if is_conversation(question):
             return Turn("Hello! Upload a document and ask me about it.")
         evidence_messages = [
             m["content"]

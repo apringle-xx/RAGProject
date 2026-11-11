@@ -5,7 +5,7 @@ import re
 
 def is_conversation(question: str) -> bool:
     # Only whole-message social/capability requests may bypass source requirements.
-    normalized = " ".join(re.findall(r"[a-z]+", question.lower()))
+    normalized = " ".join(re.findall(r"\w+", question.casefold()))
     return normalized in {
         "hello",
         "hello there",
@@ -17,6 +17,9 @@ def is_conversation(question: str) -> bool:
         "good afternoon",
         "good evening",
         "how are you",
+        "hi how are you",
+        "hello how are you",
+        "hey how are you",
         "what can you do",
         "help",
     }

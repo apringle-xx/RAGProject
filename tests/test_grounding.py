@@ -53,6 +53,20 @@ def test_baseline_greeting_survives_unconditional_retrieval(library):
     assert not is_conversation("Hello, when does Atlas launch?")
 
 
+def test_unicode_factual_suffix_never_disappears_from_question(library):
+    assert not is_conversation("hi 何时发布？")
+    assert not is_conversation("hi 12345")
+    model = ScriptedModel([Turn("Atlas launches tomorrow.")])
+    result = RetrievalAgent(library, model).answer("hi 何时发布？")
+    assert "tomorrow" not in result.text
+
+
+def test_combined_greeting_remains_conversational(library):
+    assert is_conversation("Hi, how are you?")
+    result = RetrievalAgent(library, OfflineModel()).answer("Hi, how are you?")
+    assert result.text.startswith("Hello") and not result.trace
+
+
 def test_offline_provider_ignores_old_tool_evidence_for_new_question():
     old = '{"sources":[{"label":"S1","text":"Atlas launches in March"}]}'
     messages = [
