@@ -13,10 +13,19 @@ from rag.types import Chunk, Section
 MAX_FILE_BYTES = 20 * 1024 * 1024
 MAX_TEXT_CHARS = 2_000_000
 MAX_CHUNKS = 2000
+PARSER_VERSION = "v2"
 
 
 def document_id(filename: str, data: bytes) -> str:
-    return hashlib.sha256(filename.encode() + b"\0" + data).hexdigest()
+    return hashlib.sha256(
+        PARSER_VERSION.encode() + b"\0" + filename.encode() + b"\0" + data
+    ).hexdigest()
+
+
+def _docx_block_text(block) -> str:
+    if hasattr(block, "rows"):
+        return "\n".join(" | ".join(cell.text for cell in row.cells) for row in block.rows)
+    return block.text
 
 
 def parse_document(filename: str, data: bytes) -> list[Section]:
@@ -46,13 +55,31 @@ def parse_document(filename: str, data: bytes) -> list[Section]:
             # Include table cells in document order, not just paragraphs.
             sections = []
             for i, block in enumerate(doc.iter_inner_content(), 1):
-                if hasattr(block, "rows"):
-                    text = "\n".join(
-                        " | ".join(cell.text for cell in row.cells) for row in block.rows
+                sections.append(Section(f"section {i}", _docx_block_text(block)))
+            seen_parts = set()
+            for i, section in enumerate(doc.sections, 1):
+                regions = [("header", section.header), ("footer", section.footer)]
+                if section.different_first_page_header_footer:
+                    regions.extend(
+                        [
+                            ("first-page header", section.first_page_header),
+                            ("first-page footer", section.first_page_footer),
+                        ]
                     )
-                else:
-                    text = block.text
-                sections.append(Section(f"section {i}", text))
+                if doc.settings.odd_and_even_pages_header_footer:
+                    regions.extend(
+                        [
+                            ("even-page header", section.even_page_header),
+                            ("even-page footer", section.even_page_footer),
+                        ]
+                    )
+                for name, region in regions:
+                    part = str(region.part.partname)
+                    if part in seen_parts:
+                        continue
+                    seen_parts.add(part)
+                    text = "\n\n".join(_docx_block_text(b) for b in region.iter_inner_content())
+                    sections.append(Section(f"{name} {i}", text))
         else:
             raise ValueError("Supported file types are PDF, DOCX and UTF-8 TXT.")
     except UnicodeDecodeError as exc:
@@ -79,15 +106,37 @@ def chunk_document(
     source = PurePath(filename.replace("\\", "/")).name
     doc_id = document_id(source, data)
     chunks = []
-    for section in parse_document(source, data):
-        for start in range(0, len(section.text), chunk_size - overlap):
-            text = section.text[start : start + chunk_size]
-            chunk_id = hashlib.sha256(f"{doc_id}:{section.location}:{start}".encode()).hexdigest()
-            chunks.append(Chunk(chunk_id, doc_id, source, section.location, start, text))
+    sections = parse_document(source, data)
+    if PurePath(source).suffix.lower() == ".docx":
+        # Bridge body paragraph boundaries so headings remain next to their facts.
+        body = [s for s in sections if s.location.startswith("section ")]
+        regions = ([body] if body else []) + [
+            [s] for s in sections if not s.location.startswith("section ")
+        ]
+    else:
+        regions = [[s] for s in sections]
+    for region in regions:
+        combined = "\n\n".join(s.text for s in region)
+        offsets, position = [], 0
+        for section in region:
+            offsets.append((position, position + len(section.text), section.location))
+            position += len(section.text) + 2
+        for start in range(0, len(combined), chunk_size - overlap):
+            text = combined[start : start + chunk_size]
+            if not text.strip():
+                continue
+            locations = [
+                name for low, high, name in offsets if high > start and low < start + len(text)
+            ]
+            location = (
+                locations[0] if len(locations) == 1 else f"{locations[0]} through {locations[-1]}"
+            )
+            chunk_id = hashlib.sha256(f"{doc_id}:{location}:{start}".encode()).hexdigest()
+            chunks.append(Chunk(chunk_id, doc_id, source, location, start, text))
             if len(chunks) > MAX_CHUNKS:
                 raise ValueError(
                     "The document produces too many chunks; split it into smaller files."
                 )
-            if start + chunk_size >= len(section.text):
+            if start + chunk_size >= len(combined):
                 break
     return chunks
