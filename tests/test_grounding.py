@@ -35,7 +35,7 @@ def test_uncited_fact_is_blocked_with_no_search_and_no_hits(library):
     assert "tomorrow" not in result.text and result.trace[0]["hits"] == 0
 
 
-@pytest.mark.parametrize("token", ["[S99 ]", "[S 99]", "[s99]", "[S1, S99]", "[S99"])
+@pytest.mark.parametrize("token", ["[S99 ]", "[S 99]", "[s99]", "[S1, S99]", "[S99", "[S99\n]"])
 def test_malformed_citations_cannot_hide_beside_valid_one(library, token):
     library.ingest("x.txt", b"Atlas owner Maya")
     model = ScriptedModel([search("Atlas"), Turn(f"Maya [S1]. Someone else {token}.")])
