@@ -1,0 +1,21 @@
+:root { --rag-ink: #163344; --rag-teal: #087f8c; }
+.stApp { background: #f8fafb; }
+.block-container { max-width: 1120px; padding-top: 3rem; padding-bottom: 5rem; }
+h1 { color: var(--rag-ink); letter-spacing: -0.04em; font-weight: 700; }
+h3, h4 { color: var(--rag-ink); }
+.eyebrow { color: var(--rag-teal); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; }
+[data-testid="stSidebar"] { background: #edf3f5; border-right: 1px solid #dae5e9; }
+[data-testid="stMetric"] { background: #ffffff; border: 1px solid #e0e9ed; border-radius: 12px; padding: 12px 18px; }
+[data-testid="stMetricLabel"] { color: #526876; }
+[data-testid="stMetricValue"] { color: var(--rag-ink); font-size: 1.6rem; }
+[data-testid="stChatMessage"] { background: #ffffff; border: 1px solid #e1e9ed; border-radius: 12px; padding: 1.2rem; margin-bottom: 0.8rem; }
+[data-testid="stChatMessage"] a { color: #006c80; text-decoration: underline; }
+[data-testid="stBottomBlockContainer"] { max-width: 1120px; }
+[data-testid="stFileUploaderDropzone"] { background: #ffffff; }
+[data-testid="stExpander"] { background: #ffffff; }
+@media (max-width: 640px) {
+  .block-container { padding-top: 1.5rem; }
+  h1 { font-size: 2rem; }
+  [data-testid="stMetric"] { padding: 8px; }
+  [data-testid="stChatMessage"] { padding: 0.85rem; }
+}

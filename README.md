@@ -18,6 +18,32 @@ and `RAG_CHAT_MODEL`. Never commit your key. Real OpenAI use sends extracted doc
 text, queries and bounded chat history to OpenAI and incurs API charges. Original files
 are not saved. Chunk text and vectors remain in the ignored `.rag-data/` directory.
 
+## Web app
+
+```sh
+.venv/bin/python -m streamlit run app.py
+```
+
+Open the address Streamlit prints (port 8501 by default). Choose **OpenAI**, upload
+PDF/DOCX/TXT files, click **Index documents**, then ask questions. Each answer shows
+clickable source citations with original chunk text, a retrieval trace, and end-to-end
+latency. Ingestion latency appears beside the indexing result. Follow-up questions use
+chat history. **Clear chat** resets the conversation; **Clear library** removes the
+current provider's indexed data and clears the chat and queued uploads.
+
+Without an API key, explicitly choose **Offline demo** to exercise uploads, storage,
+retrieval and citations locally with hashed word matching and extractive responses.
+It is not an LLM and cannot substitute for live agent evaluation. Provider libraries
+and chat histories are separated, so demo vectors never mix with OpenAI embeddings.
+
+The workspace token in the URL preserves the local document library across refreshes;
+chat history lasts for the browser session. Bookmark that URL to return to the same
+library. This app is intended for local, single-user use and has no authentication:
+anyone who can reach the app and has a workspace URL can access that library. Keep
+Streamlit bound to localhost outside a controlled development environment. A fresh URL
+without the token starts an empty library. `RAG_DATA_DIR` sets the storage root.
+Clearing one workspace does not erase data in other workspace/provider directories.
+
 ## Core pipeline
 
 `rag.documents` accepts UTF-8 TXT, PDF (with text, no OCR), and DOCX (including tables).
