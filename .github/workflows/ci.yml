@@ -1,0 +1,25 @@
+name: Python checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m ruff check .
+      - run: python -m ruff format --check .
+      - name: Test core logic when present
+        run: |
+          if [ -d tests ]; then
+            python -m pytest -q
+          else
+            python -c 'import faiss, openai, pypdf, docx, streamlit'
+          fi
