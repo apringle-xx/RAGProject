@@ -1,0 +1,2 @@
+Documents are stored in Dublin. Data encryption uses AES-256. The retention period is 90 days.
+Security approval is granted by Nora Patel.

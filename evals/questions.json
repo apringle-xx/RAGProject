@@ -1,0 +1,10 @@
+[
+  {"id":"launch","kind":"direct","question":"When does Project Atlas launch?","facts":[["15 March 2027", "March 15, 2027", "2027-03-15"]],"sources":["atlas.txt"]},
+  {"id":"owner","kind":"direct","question":"Who owns Project Atlas?","facts":[["Maya Chen"]],"sources":["atlas.txt"]},
+  {"id":"office","kind":"multi-hop","question":"Which office does the owner of Project Atlas work in?","facts":[["Oslo"]],"sources":["atlas.txt","people.txt"]},
+  {"id":"approver","kind":"multi-hop","question":"Who grants the approval required before Atlas launches?","facts":[["Nora Patel"]],"sources":["atlas.txt","security.txt"]},
+  {"id":"support","kind":"direct","question":"What is the support response target?","facts":[["48 hours", "48-hour", "two days"]],"sources":["support.txt"]},
+  {"id":"two-docs","kind":"cross-document","question":"Give Atlas's internal codename and the document retention period.","facts":[["Redwood"],["90 days", "90-day"]],"sources":["atlas.txt","security.txt"]},
+  {"id":"unknown","kind":"unanswerable","question":"What is the annual revenue of Acme in 2025?","facts":[],"sources":[],"abstain":true},
+  {"id":"greeting","kind":"no-retrieval","question":"Hello","facts":[["hello", "hi"]],"sources":[],"no_retrieval":true}
+]
