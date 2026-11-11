@@ -9,6 +9,7 @@ from typing import Protocol
 import numpy as np
 from openai import OpenAI
 
+from rag.grounding import is_conversation
 from rag.types import ToolCall, Turn
 
 SEARCH_TOOL = {
@@ -107,14 +108,18 @@ class OfflineModel:
     """A transparent extractive demo, not an LLM substitute or quality benchmark."""
 
     def complete(self, messages: list[dict], *, tools: bool) -> Turn:
-        users = [m["content"] for m in messages if m["role"] == "user"]
-        questions = [text for text in users if not text.startswith("Evidence JSON:\n")]
+        question_positions = [
+            i
+            for i, m in enumerate(messages)
+            if m["role"] == "user" and not m["content"].startswith("Evidence JSON:\n")
+        ]
+        questions = [messages[i]["content"] for i in question_positions]
         question = questions[-1]
-        if question.strip().lower().strip("!.") in {"hello", "hi", "hey", "thanks", "thank you"}:
+        if is_conversation(question):
             return Turn("Hello! Upload a document and ask me about it.")
         evidence_messages = [
             m["content"]
-            for m in messages
+            for m in messages[question_positions[-1] + 1 :]
             if m["role"] == "tool" or (m.get("content") or "").startswith("Evidence JSON:\n")
         ]
         query = question

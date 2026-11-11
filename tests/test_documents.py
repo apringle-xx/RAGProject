@@ -76,3 +76,48 @@ def test_invalid_overlap_and_empty_scanned_pdf():
 
 def test_utf8_bom_is_removed():
     assert parse_document("notes.txt", b"\xef\xbb\xbfhello")[0].text == "hello"
+
+
+def test_docx_heading_and_fact_stay_together_with_competing_sections(library):
+    doc = Document()
+    doc.add_heading("Atlas launch", level=1)
+    doc.add_paragraph("15 March 2027")
+    for i in range(12):
+        doc.add_heading(f"Other project {i}", level=1)
+        doc.add_paragraph("Unrelated details " * 25)
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    chunks = chunk_document("projects.docx", buffer.getvalue())
+    assert "Atlas launch" in chunks[0].text and "15 March 2027" in chunks[0].text
+    assert "through" in chunks[0].location
+    library.ingest("projects.docx", buffer.getvalue())
+    assert "15 March 2027" in library.search("Atlas launch", k=1)[0].chunk.text
+
+
+def test_header_only_docx_and_shared_headers_are_indexed_once():
+    doc = Document()
+    doc.sections[0].header.paragraphs[0].text = "Atlas owner Maya Chen"
+    doc.sections[0].footer.paragraphs[0].text = "Retention 90 days"
+    doc.add_section()
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    chunks = chunk_document("header-only.docx", buffer.getvalue())
+    assert sum("Atlas owner" in c.text for c in chunks) == 1
+    assert sum("Retention" in c.text for c in chunks) == 1
+    assert {c.location for c in chunks} == {"header 1", "footer 1"}
+
+
+def test_body_first_page_header_and_footer_tables_have_provenance():
+    doc = Document()
+    doc.add_paragraph("Body text")
+    section = doc.sections[0]
+    section.different_first_page_header_footer = True
+    section.first_page_header.paragraphs[0].text = "Special cover fact"
+    table = section.footer.add_table(rows=1, cols=1, width=1)
+    table.cell(0, 0).text = "Footer table fact"
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    chunks = chunk_document("template.docx", buffer.getvalue())
+    assert any(c.location == "section 1" and "Body text" in c.text for c in chunks)
+    assert any(c.location == "first-page header 1" and "cover fact" in c.text for c in chunks)
+    assert any(c.location == "footer 1" and "Footer table fact" in c.text for c in chunks)
