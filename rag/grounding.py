@@ -5,7 +5,7 @@ import re
 
 def is_conversation(question: str) -> bool:
     # Only whole-message social/capability requests may bypass source requirements.
-    normalized = " ".join(re.findall(r"[a-z]+", question.lower()))
+    normalized = " ".join(re.findall(r"\w+", question.casefold()))
     return normalized in {
         "hello",
         "hello there",
@@ -17,6 +17,9 @@ def is_conversation(question: str) -> bool:
         "good afternoon",
         "good evening",
         "how are you",
+        "hi how are you",
+        "hello how are you",
+        "hey how are you",
         "what can you do",
         "help",
     }
@@ -38,7 +41,7 @@ def is_abstention(text: str) -> bool:
 
 def citation_labels(text: str) -> list[str]:
     # Reject whitespace, lowercase and mixed-list deviations, including unclosed labels.
-    tokens = re.findall(r"\[\s*s(?:ource)?[\s:_-]*\d[^\]\n]*(?:\]|$)", text, flags=re.I)
+    tokens = re.findall(r"\[\s*s(?:ource)?[\s:_-]*\d[^\]]*(?:\]|$)", text, flags=re.I)
     if any(not re.fullmatch(r"\[S[1-9]\d*\]", token) for token in tokens):
         raise ValueError("Malformed source citation.")
     return list(dict.fromkeys(token[1:-1] for token in tokens))
