@@ -123,7 +123,16 @@ class OfflineModel:
             if m["role"] == "tool" or (m.get("content") or "").startswith("Evidence JSON:\n")
         ]
         query = question
-        if re.search(r"\b(it|its|they|their|that)\b", question, re.I) and len(questions) > 1:
+        # An explicit subject wins over a pronoun elsewhere in the same question.
+        # This is a small demo heuristic; the OpenAI provider rewrites using the LLM.
+        explicit_subject = re.search(r"\bproject\s+\w+", question, re.I) or re.search(
+            r"\b[A-Z][\w-]+\b", " ".join(question.split()[1:])
+        )
+        if (
+            re.search(r"\b(it|its|they|their|that)\b", question, re.I)
+            and not explicit_subject
+            and len(questions) > 1
+        ):
             query = questions[-2] + " " + question
         if tools and not evidence_messages:
             return Turn(

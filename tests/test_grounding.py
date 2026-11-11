@@ -79,3 +79,23 @@ def test_offline_provider_ignores_old_tool_evidence_for_new_question():
     assert turn.calls and "Borealis" in turn.calls[0].arguments
     messages.append({"role": "tool", "content": '{"sources":[]}'})
     assert "don't know" in OfflineModel().complete(messages, tools=True).text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "When does Project Atlas launch and who owns it?",
+        "when does project atlas launch and who owns it?",
+    ],
+)
+def test_named_subject_wins_over_previous_topic_in_demo(library, question):
+    library.ingest("atlas.txt", b"Project Atlas launches on 15 March 2027. Owner Maya Chen.")
+    library.ingest("cedar.txt", b"Cedar storage capacity is 240 terabytes.")
+    history = [
+        {"role": "user", "content": "What is Cedar storage capacity?"},
+        {"role": "assistant", "content": "240 terabytes [S1]"},
+    ]
+    answer = RetrievalAgent(library, OfflineModel()).answer(question, history)
+    assert answer.trace[0]["query"] == question
+    assert "15 March 2027" in answer.text and "Maya Chen" in answer.text
+    assert "Cedar" not in answer.text
